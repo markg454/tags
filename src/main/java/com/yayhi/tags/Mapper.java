@@ -48,8 +48,8 @@ public class Mapper {
     private static String inputCSVFilePath			= null;
     private static String outputCSVFilePath			= null;
     private static boolean debug 					= false;
-    private static boolean verbose 					= false;
     private static boolean test						= false;
+    private static boolean verbose					= false;
     private static YLogger logger					= null;
     private static boolean hasErrors				= false;
     
@@ -88,28 +88,25 @@ public class Mapper {
         //* Get Command Line Arguments - overwrites the properties file value, if any
         //*********************************************************************************************
     	
-    	String usage = "Usage:\n" + "java -jar tagmapper.jar [-i INPUT_CSV] [-o OUTPUT_CSV] [-t] (TEST and validate the input file but don't database inserts - optional) [-v] (VERBOSE mode - optional) [-d] (DEBUG - optional)\n";
+    	String usage = "Usage:\n" + "java -jar tagmapper.jar [-i INPUT_CSV] [-t] (TEST and validate the input file but don't database inserts - optional) [-v] (VERBOSE mode - optional) [-d] (DEBUG - optional)\n";
     	String example = "Example:\n" + "java -jar tagmapper.jar -i /tmp/tags.csv -c 123456\n" +
-    	"java -jar tagmapper.jar -i /tmp/tags.csv -o /tmp/out.csv -d\n" +
-    	"java -jar tagmapper.jar -i /tmp/tags.csv -o /tmp/out.csv -t\n" +
-    	"java -jar tagmapper.jar -i /tmp/tags.csv -o /tmp/out.csv -v -d\n";
+    	"java -jar tagmapper.jar -i /tmp/tags.csv -d\n" +
+    	"java -jar tagmapper.jar -i /tmp/tags.csv -v -d\n";
 
         // get command line arguments
-    	if (args.length >= 4) {
+    	if (args.length >= 2) {
     		
 	    	for (int optind = 0; optind < args.length; optind++) {
 	    	    
 	    		if (args[optind].equals("-i")) {
 	    			inputCSVFilePath = args[++optind];
-				} else if (args[optind].equals("-o")) {
-	    			outputCSVFilePath = args[++optind];
 				} else if (args[optind].equals("-d")) {
 					debug = true; 
-				} else if (args[optind].equals("-t")) {
-					test = true; 
-		    	} else if (args[optind].equals("-v")) {
+				} else if (args[optind].equals("-v")) {
 					verbose = true; 
-		    	} 
+		    	} else if (args[optind].equals("-t")) {
+					test = true;
+		    	}
 	    		
 	    	}
         }
@@ -142,7 +139,6 @@ public class Mapper {
 			System.out.println("input CSV file: " + inputCSVFilePath);
 			System.out.println("output CSV file: " + outputCSVFilePath);
 			System.out.println("debug: " + debug);
-			System.out.println("verbose: " + verbose);
 			System.out.println("test: " + test);
 			
     	}
@@ -167,15 +163,26 @@ public class Mapper {
     	    
         }
         
+        // output run information to stdout
+        if (verbose) {
+        	if (test) {
+	    		System.out.println("\tRUN MODE =\t\tTest and Validate");
+	    	}
+	    	else {
+	    		System.out.println("\tRUN MODE =\t\tInsert");
+	    	}
+        }
+        
         // log run information   
 	    try {
-	    	if (test)
+	    	
+	    	if (test) {
 	    		logger.write("\tRUN MODE =\t\tTest and Validate");
-	    	else
+	    	}
+	    	else {
 	    		logger.write("\tRUN MODE =\t\tInsert");
-			
+	    	}
 	    	logger.write("\tINPUT CSV =\t\t" + inputCSVFilePath);
-	    	logger.write("\tOUTPUT CSV =\t\t" + outputCSVFilePath);
 
 			
   	    } catch (IOException e) {
@@ -258,6 +265,7 @@ public class Mapper {
 			System.out.println("Count of parsed lines: " + lines.length);
 		}
 		
+		int tCount = 1; //    used to count number of operations
 		for (int i = 0; i < lines.length; i++) {
 	
 			hasErrors = false;
@@ -302,10 +310,15 @@ public class Mapper {
 		        	tag.setConcern(concernStr.trim());
 		        	tag.setTag(tagStr.trim());
 		        	tag.setKeyword(keyword.trim());
+		        	tag.setLogger(logger);
 		        	
-		        	if (tag.commit()) {
+		        	if (debug || verbose) {
+		        		System.out.println(++tCount + ":\tCONCERN: " + tag.getConcern() + "\tTAG: " + tag.getTag() + "\tKEYWORD: " + tag.getKeyword());
+		        	}
+		        	
+		        	if (!test && tag.commit()) {
 		        		
-		        		logger.write("\tID: " + tag.getID() + "\tCONCERN: " + tag.getConcern() + "\tTAG: " + tag.getTag() + "\tKEYWORD: " + tag.getKeyword());
+		        		//logger.write("\tID: " + tag.getID() + "\tCONCERN: " + tag.getConcern() + "\tTAG: " + tag.getTag() + "\tKEYWORD: " + tag.getKeyword());
 		        		
 		        	}
 					

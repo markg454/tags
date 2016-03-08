@@ -1,13 +1,13 @@
 package com.yayhi.dao;
 
+import java.io.IOException;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.PreparedStatement;
 
 import com.yayhi.tags.Tag;
-import com.yayhi.dao.DAO;
 
 /**
  * -----------------------------------------------------------------------------
@@ -19,7 +19,7 @@ import com.yayhi.dao.DAO;
 
 public class TagDAO {
 
-    static boolean debug			= true;
+    static boolean debug			= false;
     DAO dao							= null;
     
     // create the Tag Direct Access Object.
@@ -32,7 +32,7 @@ public class TagDAO {
     	dao.getDAOConnection().commit(); 	
     }
     
-    public int getNextID()  throws SQLException {
+   public int getNextID()  throws SQLException {
     	
     	dao.open();
     	Connection con = dao.getDAOConnection();
@@ -70,6 +70,49 @@ public class TagDAO {
         return nextID;
     	
     }
+   
+   	public boolean mappingExists(Tag t)  throws SQLException {
+   	
+    	dao.open();
+    	Connection con = dao.getDAOConnection();
+    	Statement stmt = null;
+	   	ResultSet rset = null;
+	   	int id = 0;
+	   	boolean returnVal = false;
+	   
+	   	String query = "" + 
+		"SELECT t.id as id " + 
+		"FROM tag_map t " + 
+		"WHERE t.concern = '" + t.getConcern() + "' AND t.tag = '" + t.getTag() + "' AND t.keyword = '" + t.getKeyword() + "'";
+	
+	   if (debug) {
+	   	System.out.print(query);
+	   }
+	   
+	   stmt = con.createStatement();
+	
+	   rset = stmt.executeQuery(query);
+	
+	   // get next id
+	   while (rset.next()) {    	
+		   id = rset.getInt("id");
+	   }
+	   
+	   if (id > 0) {
+		   returnVal = true;
+	   }
+	
+	   rset.close();
+	
+	   stmt.close();
+	   
+	   con.close();
+	   
+	   dao.close();
+	   
+	   return returnVal;
+	   	
+	}
     
     // get all data about a Tag by id
     public boolean read(Tag tag, int id) throws SQLException {
@@ -134,13 +177,57 @@ public class TagDAO {
     }
     
     // create tag record
-    public void commit(Tag t) throws SQLException {
+    public void commit(Tag t) throws SQLException, IOException {
 
     	dao.open();
     	Connection con = dao.getDAOConnection();
-    	t.setID(getNextID());
     	
-        if (t.getID() > 0) {
+    	Statement stmt = null;
+	   	ResultSet rset = null;
+	   	int currentID = 0;
+	   	boolean exists = false;
+	   
+	   	String query = "" + 
+		"SELECT t.id as currentID " + 
+		"FROM tag_map t " + 
+		"WHERE t.concern = '" + t.getConcern() + "' AND t.tag = '" + t.getTag() + "' AND t.keyword = '" + t.getKeyword() + "'";
+	
+	   	if (debug) {
+	   		System.out.print(query);
+	   	}
+   
+	   	stmt = con.createStatement();
+
+	   	rset = stmt.executeQuery(query);
+
+	   	// get next id
+	   	while (rset.next()) {    	
+	   		currentID = rset.getInt("currentID");
+	   	}
+   
+	   	if (currentID > 0) {
+	   		exists = true;
+	   	}
+
+	   	rset.close();
+
+	   	stmt.close();
+	   
+	   	//boolean exists = this.mappingExists(t);
+    	
+    	if (debug) {
+    		System.out.println("TagDAO: commit: concern: " + t.getConcern() + " tag: " + t.getTag() + " keyword: " + t.getKeyword() + " exists: " + exists);
+    	}
+    	
+    	// log the work
+    	if (exists) {
+    		t.getLogger().write("\tID: " + currentID + "\tCONCERN: " + t.getConcern() + "\tTAG: " + t.getTag() + "\tKEYWORD: " + t.getKeyword() + "\t***** EXISTS");
+    	} else {
+        	t.setID(getNextID());
+        	t.getLogger().write("\tID: " + t.getID() + "\tCONCERN: " + t.getConcern() + "\tTAG: " + t.getTag() + "\tKEYWORD: " + t.getKeyword());
+    	}
+    	
+        if (!exists && t.getID() > 0) {
 
         	PreparedStatement pst = null;
 

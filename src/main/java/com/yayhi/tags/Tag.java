@@ -1,7 +1,10 @@
 package com.yayhi.tags;
 
+import java.io.IOException;
 import java.sql.SQLException;
+
 import com.yayhi.dao.TagDAO;
+import com.yayhi.utils.YLogger;
 
 /**
  * -----------------------------------------------------------------------------
@@ -19,6 +22,7 @@ public class Tag {
 	private static int id						= 0;
 	private static String tag					= null;
 	private static String keyword				= null;
+    private static YLogger logger				= null;
 	
 	//*********************************************************************************************
     //* Tag constructor 
@@ -90,7 +94,17 @@ public class Tag {
 		return debug;
 	}
 
-	public boolean commit() {
+	// set logger
+	public void setLogger(YLogger l) {
+		logger = l;
+	}
+
+	// get logger
+	public YLogger getLogger() {
+		return logger;
+	}
+
+	public boolean commit() throws IOException {
 
         boolean returnVal = false;
         try {
