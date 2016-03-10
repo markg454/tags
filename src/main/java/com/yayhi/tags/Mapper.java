@@ -255,15 +255,15 @@ public class Mapper {
 			hasErrors = false;
 			
 			// vocabulary
-			String vocabularyStr = lines[i][0];
+			String vocabularyStr = lines[i][0].toLowerCase();
 			
 			// parent term
-			String parenttermStr = lines[i][1];
+			String parenttermStr = lines[i][1].toLowerCase();
 			
 			// term 
 			String termStr = "";
 			try {
-				termStr = lines[i][2];
+				termStr = lines[i][2].toLowerCase();
 			} catch (Exception e) {
 				;
 			}
