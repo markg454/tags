@@ -1,35 +1,19 @@
 package com.yayhi.tags;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLEncoder;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Properties;
-import java.util.TimeZone;
-import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.net.URI;
 
 import com.Ostermiller.util.ExcelCSVParser;
 import com.yayhi.utils.YLogger;
 import com.yayhi.utils.YProperties;
-import com.yayhi.utils.YUtils;
-import com.yayhi.tags.CSVFileWriter;
 
 /**
  * -----------------------------------------------------------------------------
@@ -211,7 +195,7 @@ public class Mapper {
 			
 			while ((sCurrentLine = br.readLine()) != null) {
 
-				if (lineCount == 0 && sCurrentLine.contains("keywords")) { // skip header line if it exists
+				if (lineCount == 0 && sCurrentLine.contains("ocabulary")) { // skip header line if it exists
 					if (debug)
 						System.out.println("Skipping header ...");
 				}
@@ -270,50 +254,60 @@ public class Mapper {
 	
 			hasErrors = false;
 			
-			// concern
-			String concernStr = lines[i][0];
+			// vocabulary
+			String vocabularyStr = lines[i][0];
 			
-			// tag
-			String tagStr = lines[i][1];
+			// parent term
+			String parenttermStr = lines[i][1];
 			
-			// keywords list
-			String keywordsStr = lines[i][2];
+			// term 
+			String termStr = "";
+			try {
+				termStr = lines[i][2];
+			} catch (Exception e) {
+				;
+			}
+			
+			// synonyms list
+			String synonymsStr = lines[i][3];
 			
 			if (debug) {
 	    		
 				System.out.println("-----------");
-				System.out.println("concernStr: " + concernStr.trim());
-				System.out.println("tagStr: " + tagStr.trim());
-				System.out.println("keywordsStr: " + keywordsStr.trim());
+				System.out.println("vocabularyStr: " + vocabularyStr.trim());
+				System.out.println("parenttermStr: " + parenttermStr.trim());
+				System.out.println("termStr: " + termStr.trim());
+				System.out.println("synonymsStr: " + synonymsStr.trim());
 		    	
 			}
 			
-			// parse out keywords list of strings
-			String[] keywords = null;
-			if (keywordsStr.contains(",")) {
+			// parse out synonyms list of strings
+			String[] synonyms = null;
+			if (synonymsStr.contains(",")) {
 				
-				keywords = keywordsStr.split(",");
+				synonyms = synonymsStr.split(",");
 				if (debug) {
-					System.out.println("keywords: " + Arrays.toString(keywords));
+					System.out.println("synonyms: " + Arrays.toString(synonyms));
 				}
 				
-				for (String keyword : keywords) {
+				for (String synonym : synonyms) {
 					
 					if (debug) {
-						System.out.println("keyword: " + keyword.trim());
+						System.out.println("\nsynonym: " + synonym.trim());
 					}
 					
 					//*********************************************************************************************
 		            //* Create the Tag object
 		            //*********************************************************************************************
 		        	Tag tag = new Tag();
-		        	tag.setConcern(concernStr.trim());
-		        	tag.setTag(tagStr.trim());
-		        	tag.setKeyword(keyword.trim());
+		        	tag.setVocabulary(vocabularyStr.trim());
+		        	tag.setParentTerm(parenttermStr.trim());
+		        	tag.setTerm(termStr.trim());
+		        	tag.setSynonym(synonym.trim());
 		        	tag.setLogger(logger);
 		        	
 		        	if (debug || verbose) {
-		        		System.out.println(++tCount + ":\tCONCERN: " + tag.getConcern() + "\tTAG: " + tag.getTag() + "\tKEYWORD: " + tag.getKeyword());
+		        		System.out.println(++tCount + ":\tVOCABULARY: " + tag.getVocabulary() + "\tPARENT TERM: " + tag.getParentTerm() + "\tTERM: " + tag.getTerm() + "\tSYNONYM: " + tag.getSynonym());
 		        	}
 		        	
 		        	if (!test && tag.commit()) {

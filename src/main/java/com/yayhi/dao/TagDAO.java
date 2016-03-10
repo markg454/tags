@@ -19,7 +19,7 @@ import com.yayhi.tags.Tag;
 
 public class TagDAO {
 
-    static boolean debug			= false;
+    static boolean debug			= true;
     DAO dao							= null;
     
     // create the Tag Direct Access Object.
@@ -43,11 +43,11 @@ public class TagDAO {
         String query = "" + 
         		"SELECT AUTO_INCREMENT as nextID " + 
         		"FROM information_schema.TABLES " + 
-        		"WHERE TABLE_SCHEMA = 'tag_mapper'" + 
-        		"AND TABLE_NAME = 'tag_map'";
+        		"WHERE TABLE_SCHEMA = 'tagmap' " + 
+        		"AND TABLE_NAME = 'map'";
 
         if (debug) {
-        	System.out.print(query);
+        	System.out.print("TagDAO: getNextID: " + query);
         }
         
         stmt = con.createStatement();
@@ -70,111 +70,6 @@ public class TagDAO {
         return nextID;
     	
     }
-   
-   	public boolean mappingExists(Tag t)  throws SQLException {
-   	
-    	dao.open();
-    	Connection con = dao.getDAOConnection();
-    	Statement stmt = null;
-	   	ResultSet rset = null;
-	   	int id = 0;
-	   	boolean returnVal = false;
-	   
-	   	String query = "" + 
-		"SELECT t.id as id " + 
-		"FROM tag_map t " + 
-		"WHERE t.concern = '" + t.getConcern() + "' AND t.tag = '" + t.getTag() + "' AND t.keyword = '" + t.getKeyword() + "'";
-	
-	   if (debug) {
-	   	System.out.print(query);
-	   }
-	   
-	   stmt = con.createStatement();
-	
-	   rset = stmt.executeQuery(query);
-	
-	   // get next id
-	   while (rset.next()) {    	
-		   id = rset.getInt("id");
-	   }
-	   
-	   if (id > 0) {
-		   returnVal = true;
-	   }
-	
-	   rset.close();
-	
-	   stmt.close();
-	   
-	   con.close();
-	   
-	   dao.close();
-	   
-	   return returnVal;
-	   	
-	}
-    
-    // get all data about a Tag by id
-    public boolean read(Tag tag, int id) throws SQLException {
-    	
-    	boolean returnVal = false;
-    	dao.open();
-    	Connection con = dao.getDAOConnection();
-    	
-    	if (debug) {
-    		System.out.print("read Tag\n");
-    		System.out.print("  id: " + id + "\n");
-    		System.out.print("  concern: " + tag.getConcern() + "\n");
-    	}
-
-    	Statement stmt = null;
-        ResultSet rset = null;
-        String query = "" +
-        		"SELECT t.concern " + 
-        		"FROM tag_mapper t " +
-        		"WHERE t.id = " + id;
-
-        if (debug) {
-        	System.out.print("  Query...\n");
-        	System.out.print(query);
-        	System.out.print("\n");
-        	System.out.print("  Creating Statement...\n");
-        }
-        
-        stmt = con.createStatement();
-
-        if (debug) {
-        	System.out.print("  Opening ResultsSet...\n");
-        }
-        rset = stmt.executeQuery(query);
-
-        // set Tag data
-        while (rset.next()) {
-        	
-        	if (debug) {
-	            System.out.println("  Results...");
-	            System.out.println("      id					   -> " + rset.getInt("id"));
-	            System.out.println("      concern				   -> " + rset.getString("concern"));
-        	}
-        	
-        	tag.setID(rset.getInt("id"));
-        	tag.setConcern(rset.getString("concern"));
-        	
-        	returnVal = true;
-        }
-
-        rset.close();
-
-        if (debug) {
-        	System.out.print("  Closing Statement...\n");
-        }
-        stmt.close();
-        
-        dao.close();
-
-    	return returnVal;
-    	
-    }
     
     // create tag record
     public void commit(Tag t) throws SQLException, IOException {
@@ -186,14 +81,20 @@ public class TagDAO {
 	   	ResultSet rset = null;
 	   	int currentID = 0;
 	   	boolean exists = false;
+	   	String whereStr = "";
+	   	
+	   	whereStr += "t.vocabulary = '" + t.getVocabulary() + "' AND t.parent_term = '" + t.getParentTerm() + "' AND t.synonym = '" + t.getSynonym() + "'";
+	   	if (!t.getTerm().equals("")) {
+	   		whereStr += " AND t.term = '" + t.getTerm() + "'";
+	   	}
 	   
 	   	String query = "" + 
 		"SELECT t.id as currentID " + 
-		"FROM tag_map t " + 
-		"WHERE t.concern = '" + t.getConcern() + "' AND t.tag = '" + t.getTag() + "' AND t.keyword = '" + t.getKeyword() + "'";
+		"FROM map t " + 
+		"WHERE " + whereStr;
 	
 	   	if (debug) {
-	   		System.out.print(query);
+	   		System.out.print("TagDAO: check existence: " + query);
 	   	}
    
 	   	stmt = con.createStatement();
@@ -216,22 +117,22 @@ public class TagDAO {
 	   	//boolean exists = this.mappingExists(t);
     	
     	if (debug) {
-    		System.out.println("TagDAO: commit: concern: " + t.getConcern() + " tag: " + t.getTag() + " keyword: " + t.getKeyword() + " exists: " + exists);
+    		System.out.println("TagDAO: commit: vocabulary: " + t.getVocabulary() + " parent term: " + t.getParentTerm() + " term: " + t.getTerm() + " exists: " + exists);
     	}
     	
     	// log the work
     	if (exists) {
-    		t.getLogger().write("\tID: " + currentID + "\tCONCERN: " + t.getConcern() + "\tTAG: " + t.getTag() + "\tKEYWORD: " + t.getKeyword() + "\t***** EXISTS");
+    		t.getLogger().write("\tID: " + currentID + ":\tVOCABULARY: " + t.getVocabulary() + "\tPARENT TERM: " + t.getParentTerm() + "\tTERM: " + t.getTerm() + "\tSYNONYM: " + t.getSynonym() + "\t***** EXISTS");
     	} else {
         	t.setID(getNextID());
-        	t.getLogger().write("\tID: " + t.getID() + "\tCONCERN: " + t.getConcern() + "\tTAG: " + t.getTag() + "\tKEYWORD: " + t.getKeyword());
+        	t.getLogger().write("\tID: " + t.getID() + ":\tVOCABULARY: " + t.getVocabulary() + "\tPARENT TERM: " + t.getParentTerm() + "\tTERM: " + t.getTerm() + "\tSYNONYM: " + t.getSynonym());
     	}
     	
         if (!exists && t.getID() > 0) {
 
         	PreparedStatement pst = null;
 
-        	String insertQuery = "INSERT INTO tag_map (id,concern,tag,keyword) VALUES (?,?,?,?)";
+        	String insertQuery = "INSERT INTO map (vocabulary,parent_term,term,synonym) VALUES (?,?,?,?)";
 
         	if (debug) {
         		System.out.println("\nTag: commit: insertQuery: " + insertQuery);
@@ -241,10 +142,10 @@ public class TagDAO {
 
         		pst = con.prepareStatement(insertQuery);
 
-        		pst.setInt(1,t.getID());
-        		pst.setString(2,t.getConcern());
-        		pst.setString(3,t.getTag());
-        		pst.setString(4,t.getKeyword());
+        		pst.setString(1,t.getVocabulary());
+        		pst.setString(2,t.getParentTerm());
+        		pst.setString(3,t.getTerm());
+        		pst.setString(4,t.getSynonym());
         		
     	        int affectedRows = pst.executeUpdate();
     	        if (debug) {
