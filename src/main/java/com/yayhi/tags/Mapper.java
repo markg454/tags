@@ -292,8 +292,10 @@ public class Mapper {
 				
 				for (String synonym : synonyms) {
 					
+					String s = synonym.trim().replace("'", "\\'");
+					
 					if (debug) {
-						System.out.println("\nsynonym: " + synonym.trim());
+						System.out.println("\nsynonym: " + s);
 					}
 					
 					//*********************************************************************************************
@@ -303,7 +305,7 @@ public class Mapper {
 		        	tag.setVocabulary(vocabularyStr.trim());
 		        	tag.setParentTerm(parenttermStr.trim());
 		        	tag.setTerm(termStr.trim());
-		        	tag.setSynonym(synonym.trim());
+		        	tag.setSynonym(s);
 		        	tag.setLogger(logger);
 		        	
 		        	if (debug || verbose) {

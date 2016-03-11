@@ -145,7 +145,7 @@ public class TagDAO {
         		pst.setString(1,t.getVocabulary());
         		pst.setString(2,t.getParentTerm());
         		pst.setString(3,t.getTerm());
-        		pst.setString(4,t.getSynonym());
+        		pst.setString(4,t.getSynonym().replace("\\'", "'"));
         		
     	        int affectedRows = pst.executeUpdate();
     	        if (debug) {
